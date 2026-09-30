@@ -19,6 +19,8 @@ public class CompanySettingsService {
             return repo.findByUserId(userId).orElseGet(() -> {
                 CompanySettings settings = new CompanySettings();
                 settings.setUserId(userId);
+                settings.setCompanyName("SwiftLab");
+                settings.setOrganizationName("SwiftLab");
                 settings.setCurrencySymbol("₹");
                 settings.setCurrencyCode("INR");
                 settings.setDefaultTaxRate(18.0);
@@ -32,6 +34,7 @@ public class CompanySettingsService {
         return repo.findAll().stream().findFirst().orElseGet(() -> {
             CompanySettings defaults = new CompanySettings();
             defaults.setUserName("");
+            defaults.setCompanyName("SwiftLab");
             defaults.setOrganizationName("");
             defaults.setTagline("Modern Enterprise Invoice Management");
             defaults.setEmail("");
@@ -52,8 +55,13 @@ public class CompanySettingsService {
                 ? getSettingsForUser(settings.getUserId()) 
                 : getSettings();
         
+        if (settings.getOrganizationId() != null) {
+            current.setOrganizationId(settings.getOrganizationId());
+        }
         current.setUserName(settings.getUserName());
         current.setOrganizationName(settings.getOrganizationName());
+        current.setCompanyName(settings.getOrganizationName() != null && !settings.getOrganizationName().isBlank()
+                ? settings.getOrganizationName() : "SwiftLab");
         current.setTagline(settings.getTagline());
         current.setEmail(settings.getEmail());
         current.setPhone(settings.getPhone());

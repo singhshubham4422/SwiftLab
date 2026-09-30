@@ -18,6 +18,7 @@ public class AppRuntime {
     private boolean cloudOptInConfirmed = false;
     private Instant lastSyncAt;
     private boolean lastOnline = false;
+    @Column(name = "device_id")
     private String displayDeviceId;
 
     public Long getId() { return id; }

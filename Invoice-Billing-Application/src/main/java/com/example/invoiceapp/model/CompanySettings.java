@@ -17,6 +17,9 @@ public class CompanySettings {
     private Long organizationId;
 
     private String userName;
+    @Column(name = "company_name")
+    private String companyName;
+    @Column(name = "organization_name")
     private String organizationName;
     private String tagline = "Modern Enterprise Invoice Management";
     private String email;
@@ -82,8 +85,33 @@ public class CompanySettings {
     public String getUserName() { return userName; }
     public void setUserName(String userName) { this.userName = userName; }
 
-    public String getOrganizationName() { return organizationName; }
-    public void setOrganizationName(String organizationName) { this.organizationName = organizationName; }
+    public String getOrganizationName() {
+        if (organizationName != null && !organizationName.trim().isEmpty()) {
+            return organizationName;
+        }
+        return companyName != null ? companyName : "";
+    }
+
+    public void setOrganizationName(String organizationName) {
+        this.organizationName = organizationName;
+        if (organizationName != null && !organizationName.isBlank()) {
+            this.companyName = organizationName;
+        }
+    }
+
+    public String getCompanyName() {
+        if (companyName != null && !companyName.trim().isEmpty()) {
+            return companyName;
+        }
+        return organizationName != null ? organizationName : "";
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+        if (companyName != null && !companyName.isBlank() && (this.organizationName == null || this.organizationName.isBlank())) {
+            this.organizationName = companyName;
+        }
+    }
 
     public String getTagline() { return tagline; }
     public void setTagline(String tagline) { this.tagline = tagline; }

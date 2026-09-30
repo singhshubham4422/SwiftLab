@@ -8,6 +8,8 @@ import com.example.invoiceapp.model.enums.DataMode;
 import com.example.invoiceapp.model.enums.UserRole;
 import com.example.invoiceapp.repository.OrganizationRepository;
 import com.example.invoiceapp.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
@@ -50,7 +54,8 @@ public class UserService {
 
     public Optional<User> findByEmail(String email) {
         if (email == null) return Optional.empty();
-        return userRepository.findByEmail(email.trim().toLowerCase());
+        String clean = email.trim();
+        return userRepository.findByEmailIgnoreCaseOrUsernameIgnoreCase(clean, clean);
     }
 
     public List<UserDTO> listByOrganization(Long organizationId) {
@@ -71,9 +76,11 @@ public class UserService {
                          String phone,
                          String address) {
         String cleanEmail = email.trim().toLowerCase();
-        if (userRepository.existsByEmail(cleanEmail)) {
+        if (userRepository.existsByEmailIgnoreCase(cleanEmail) || userRepository.existsByUsernameIgnoreCase(cleanEmail)) {
             throw new IllegalArgumentException("An account with this email already exists.");
         }
+
+        log.info("Registering new organization '{}' and owner '{}'", organizationName, cleanEmail);
 
         // 1. Create Organization
         Organization org = new Organization();
@@ -81,12 +88,16 @@ public class UserService {
         org.setPreferredDataMode(DataMode.LOCAL_ONLY);
         Organization savedOrg = organizationRepository.save(org);
 
-        // 2. Create User as OWNER with BCrypt encoded password
+        // 2. Create User as OWNER with BCrypt encoded password and populated username
         String encodedPassword = passwordEncoder.encode(password);
         User user = new User(cleanEmail, encodedPassword, fullName.trim(), savedOrg.getName());
+        user.setUsername(cleanEmail);
         user.setOrganizationId(savedOrg.getId());
         user.setRole(UserRole.OWNER);
         user.setActive(true);
+        if (phone != null && !phone.isBlank()) {
+            user.setPhone(phone.trim());
+        }
         User savedUser = userRepository.save(user);
 
         // 3. Configure user's organization settings
@@ -95,6 +106,7 @@ public class UserService {
         settings.setOrganizationId(savedOrg.getId());
         settings.setUserName(fullName.trim());
         settings.setOrganizationName(savedOrg.getName());
+        settings.setCompanyName(savedOrg.getName());
         if (tagline != null && !tagline.trim().isEmpty()) {
             settings.setTagline(tagline.trim());
         }
@@ -111,19 +123,21 @@ public class UserService {
         settings.setConfigured(true);
         settingsService.saveSettings(settings);
 
+        log.info("Successfully provisioned organization ID: {} and user ID: {}", savedOrg.getId(), savedUser.getId());
         return savedUser;
     }
 
     @Transactional
     public User createOrgUser(Long organizationId, String email, String password, String fullName, UserRole role) {
         String cleanEmail = email.trim().toLowerCase();
-        if (userRepository.existsByEmail(cleanEmail)) {
+        if (userRepository.existsByEmailIgnoreCase(cleanEmail) || userRepository.existsByUsernameIgnoreCase(cleanEmail)) {
             throw new IllegalArgumentException("An account with this email already exists.");
         }
         Organization org = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
 
         User user = new User(cleanEmail, passwordEncoder.encode(password), fullName.trim(), org.getName());
+        user.setUsername(cleanEmail);
         user.setOrganizationId(organizationId);
         user.setRole(role != null ? role : UserRole.STAFF);
         user.setActive(true);
@@ -133,10 +147,13 @@ public class UserService {
     @Transactional
     public Optional<User> authenticate(String email, String rawPassword) {
         if (email == null || rawPassword == null) return Optional.empty();
-        Optional<User> userOpt = userRepository.findByEmail(email.trim().toLowerCase());
+        String identifier = email.trim();
+        log.info("Authentication attempt for identifier: {}", identifier);
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCaseOrUsernameIgnoreCase(identifier, identifier);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             if (!user.isActive()) {
+                log.warn("Authentication rejected: user account ID {} is deactivated", user.getId());
                 return Optional.empty();
             }
             String stored = user.getPassword();
@@ -144,6 +161,7 @@ public class UserService {
                 if (passwordEncoder.matches(rawPassword, stored)) {
                     user.setLastLoginAt(Instant.now());
                     userRepository.save(user);
+                    log.info("Authentication successful for user ID: {}, org ID: {}", user.getId(), user.getOrganizationId());
                     return Optional.of(user);
                 }
             } else {
@@ -152,9 +170,13 @@ public class UserService {
                     user.setPassword(passwordEncoder.encode(rawPassword));
                     user.setLastLoginAt(Instant.now());
                     userRepository.save(user);
+                    log.info("Authentication successful (upgraded legacy password) for user ID: {}, org ID: {}", user.getId(), user.getOrganizationId());
                     return Optional.of(user);
                 }
             }
+            log.warn("Authentication failed: password mismatch for user ID: {}", user.getId());
+        } else {
+            log.warn("Authentication failed: no user account found matching identifier '{}'", identifier);
         }
         return Optional.empty();
     }

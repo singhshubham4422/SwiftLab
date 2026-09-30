@@ -104,4 +104,55 @@ public class AuthAndSecurityTest {
         Optional<ApiToken> revokedLookup = apiTokenService.validateToken(token.getToken());
         assertTrue(revokedLookup.isEmpty(), "Revoked token must not be valid");
     }
+
+    @Test
+    @DisplayName("Focused Test: Register organization -> create credentials -> login with exact same credentials -> successful authentication")
+    void testRegistrationAndImmediateLoginFlow() {
+        String testEmail = "newowner@enterpriseco.com";
+        String testPassword = "MySecurePassword2026!";
+        String orgName = "Enterprise Logistics Inc";
+        String fullName = "Enterprise Admin";
+
+        // 1. Register organization and user
+        User registeredUser = userService.register(
+                testEmail,
+                testPassword,
+                fullName,
+                orgName,
+                "₹",
+                "INR",
+                "Leading logistics provider",
+                "+91 9876543210",
+                "100 Logistics Way, Tech Park"
+        );
+
+        assertNotNull(registeredUser.getId(), "User ID should be generated");
+        assertNotNull(registeredUser.getOrganizationId(), "Organization ID should be generated");
+        assertNotNull(registeredUser.getUsername(), "Username must not be null (PostgreSQL constraint)");
+        assertEquals("newowner@enterpriseco.com", registeredUser.getUsername());
+        assertEquals("newowner@enterpriseco.com", registeredUser.getEmail());
+        assertTrue(registeredUser.isActive(), "User must be active");
+        assertEquals(UserRole.OWNER, registeredUser.getRole());
+
+        // 2. Immediate login with the exact same credentials
+        Optional<User> authResult = userService.authenticate(testEmail, testPassword);
+        assertTrue(authResult.isPresent(), "Authentication must succeed with the exact registration credentials");
+
+        User authenticatedUser = authResult.get();
+        assertEquals(registeredUser.getId(), authenticatedUser.getId());
+        assertEquals(registeredUser.getOrganizationId(), authenticatedUser.getOrganizationId());
+        assertNotNull(authenticatedUser.getLastLoginAt(), "Last login timestamp should be recorded");
+
+        // 3. Login with mixed case email and whitespace
+        Optional<User> authMixedCase = userService.authenticate("  NEWOWNER@ENTERPRISECO.COM  ", testPassword);
+        assertTrue(authMixedCase.isPresent(), "Authentication must succeed with case-insensitive / trimmed email");
+
+        // 4. Login with username
+        Optional<User> authUsername = userService.authenticate(registeredUser.getUsername(), testPassword);
+        assertTrue(authUsername.isPresent(), "Authentication must succeed with username");
+
+        // 5. Verification that wrong password fails
+        Optional<User> authWrongPass = userService.authenticate(testEmail, "WrongPassword!");
+        assertTrue(authWrongPass.isEmpty(), "Authentication must fail for incorrect password");
+    }
 }

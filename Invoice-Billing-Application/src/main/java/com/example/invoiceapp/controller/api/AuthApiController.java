@@ -16,6 +16,8 @@ import com.example.invoiceapp.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,6 +30,8 @@ import java.util.Optional;
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Authentication and token management APIs")
 public class AuthApiController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthApiController.class);
 
     private final UserService userService;
     private final OrganizationService orgService;
@@ -108,7 +112,12 @@ public class AuthApiController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new AuthResponse(token.getToken(), userService.toDTO(user), orgService.toDTO(org)));
         } catch (IllegalArgumentException e) {
+            log.warn("Signup validation failed for email {}: {}", email != null ? email.trim() : null, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("API registration failed for email {}: {}", email != null ? email.trim() : null, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Registration failed"));
         }
     }
 
