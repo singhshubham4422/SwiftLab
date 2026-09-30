@@ -39,8 +39,9 @@ This guide provides the exact configuration, environment variables, health check
 | **Runtime Environment** | **Docker** |
 | **Repository** | `https://github.com/singhshubham4422/SwiftLab.git` |
 | **Branch** | `main` |
-| **Root Directory** | Leave blank (root of repository) |
-| **Dockerfile Path** | `Dockerfile` |
+| **Root Directory** | **(Leave blank)** — uses repository root (`SwiftLab`) as build context |
+| **Dockerfile Path** | `Invoice-Billing-Application/Dockerfile` |
+| **Docker Build Context** | `.` (Repository root) |
 | **Instance Type / Plan** | `Starter` or `Standard` (minimum 512MB RAM recommended) |
 | **Auto-Deploy** | `Yes` (deploys on push to `main`) |
 | **Health Check Path** | `/api/auth/profile` (returns HTTP 401 Unauthorized when unauthenticated, confirming security filter is live) |

@@ -3,7 +3,8 @@ services:
     name: swiftlab-backend
     env: docker
     plan: standard
-    dockerfilePath: Dockerfile
+    dockerContext: .
+    dockerfilePath: Invoice-Billing-Application/Dockerfile
     healthCheckPath: /api/auth/profile
     envVars:
       - key: SPRING_PROFILES_ACTIVE
