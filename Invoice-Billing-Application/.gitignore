@@ -1,0 +1,71 @@
+# ==============================================================================
+# SwiftLab Platform - Git Ignore Rules
+# ==============================================================================
+
+# Compiled & Packaged Java / Maven Outputs
+/target/
+*.class
+*.jar
+!**/gradle-wrapper.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Android & Gradle Build Artifacts
+.gradle/
+**/build/
+android/.gradle/
+android/app/build/
+android/local.properties
+*.apk
+*.ap_
+*.aab
+
+# Desktop Distribution & Bundled Toolsets
+/dist/
+/wix-bin/
+/apache-maven-3.9.6/
+InvoiceApp-Installer.exe
+*.exe
+*.msi
+*.lnk
+*.vbs
+
+# Local Embedded Database & Runtime Data (root folder only)
+/data/
+*.db
+*.mv.db
+*.trace.db
+
+# Secrets, Keystores & Environment Files
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.p12
+*.jks
+application-local-secrets.properties
+secrets.properties
+
+# IDE & Editor Configurations
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+
+# Logs & OS Specific Files
+*.log
+logs/
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+hs_err_pid*

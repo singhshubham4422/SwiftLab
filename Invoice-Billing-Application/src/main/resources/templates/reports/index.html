@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports & Analytics - SwiftLab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .sidebar { min-height: 100vh; background-color: #1e293b; }
+        .sidebar .nav-link { color: #94a3b8; padding: 0.75rem 1rem; border-radius: 0.375rem; margin-bottom: 0.25rem; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background-color: #334155; }
+        .main-content { background-color: #f8fafc; min-height: 100vh; }
+        .card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0.5rem; }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 p-0 sidebar d-none d-md-block">
+            <div th:replace="~{layout :: sidebar}"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 p-4 main-content">
+            <div th:replace="~{layout :: topbar}"></div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h4 mb-0 fw-bold">Financial & Inventory Reports</h2>
+                    <small class="text-muted">Business health, cash flow, and stock valuation</small>
+                </div>
+            </div>
+
+            <!-- Financial Summary Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card p-3 border-start border-4 border-success">
+                        <div class="text-muted small text-uppercase fw-bold">Total Sales (Revenue)</div>
+                        <div class="h3 fw-bold text-success mt-2 mb-0" th:text="'$' + ${#numbers.formatDecimal(summary.totalSales, 1, 2)}"></div>
+                        <div class="text-muted small mt-1">Today: <span class="fw-semibold text-dark" th:text="'$' + ${#numbers.formatDecimal(summary.todaySales, 1, 2)}"></span></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-3 border-start border-4 border-danger">
+                        <div class="text-muted small text-uppercase fw-bold">Total Purchases (Expenses)</div>
+                        <div class="h3 fw-bold text-danger mt-2 mb-0" th:text="'$' + ${#numbers.formatDecimal(summary.totalPurchases, 1, 2)}"></div>
+                        <div class="text-muted small mt-1">Today: <span class="fw-semibold text-dark" th:text="'$' + ${#numbers.formatDecimal(summary.todayPurchases, 1, 2)}"></span></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-3 border-start border-4 border-primary">
+                        <div class="text-muted small text-uppercase fw-bold">Total Inventory Valuation</div>
+                        <div class="h3 fw-bold text-primary mt-2 mb-0" th:text="'$' + ${#numbers.formatDecimal(summary.inventoryValue, 1, 2)}"></div>
+                        <div class="text-muted small mt-1">Low stock items: <span class="badge bg-warning text-dark" th:text="${summary.lowStockItemsCount}"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoices Breakdown -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card p-4 h-100">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Receivables / Invoices Breakdown</h5>
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span><i class="bi bi-clock-history me-2 text-warning"></i>Outstanding Invoices</span>
+                                <span class="badge bg-warning text-dark fs-6" th:text="${summary.outstandingInvoicesCount}"></span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span><i class="bi bi-check-circle me-2 text-success"></i>Fully Paid Invoices</span>
+                                <span class="badge bg-success fs-6" th:text="${summary.paidInvoicesCount}"></span>
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span><i class="bi bi-exclamation-octagon me-2 text-danger"></i>Overdue Invoices</span>
+                                <span class="badge bg-danger fs-6" th:text="${summary.overdueInvoicesCount}"></span>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <a href="/invoices" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-arrow-right me-1"></i> Manage Invoices
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card p-4 h-100">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-boxes me-2 text-primary"></i>Quick Actions & Export</h5>
+                        <p class="text-muted">Export data for auditing, tax filing, or accountant review.</p>
+                        <div class="d-grid gap-2">
+                            <a href="/invoices/export" class="btn btn-outline-success">
+                                <i class="bi bi-file-earmark-spreadsheet me-2"></i> Export Invoices to Excel (.xlsx)
+                            </a>
+                            <a href="/inventory/movements" class="btn btn-outline-info">
+                                <i class="bi bi-journal-text me-2"></i> View Stock Movements Audit Ledger
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

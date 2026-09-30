@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title th:text="${'PO #' + purchase.purchaseNumber}">Purchase Detail - SwiftLab</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div style="max-width: 900px; margin: 0 auto; background: var(--card-bg); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+            <div>
+                <h1 style="margin: 0; font-size: 1.5rem;" th:text="${'Purchase Order #' + purchase.purchaseNumber}">PO #</h1>
+                <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+                    Date: <span th:text="${purchase.purchaseDate}"></span> •
+                    Status: <span class="badge" th:classappend="${purchase.status.name() == 'RECEIVED' ? 'badge-paid' : 'badge-pending'}" th:text="${purchase.status}"></span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+                <form th:if="${purchase.status.name() != 'RECEIVED'}" th:action="@{'/purchases/' + ${purchase.id} + '/receive'}" method="post">
+                    <button type="submit" class="btn btn-primary btn-sm">📦 Mark Received & Update Stock</button>
+                </form>
+                <a th:href="@{/purchases}" class="btn btn-secondary btn-sm">&larr; Back to Purchases</a>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">Supplier Details</h4>
+                <div style="font-weight: 600;" th:text="${supplier != null ? supplier.name : 'Unknown Supplier'}"></div>
+                <div th:if="${supplier != null && supplier.phone}" th:text="${'Phone: ' + supplier.phone}"></div>
+                <div th:if="${supplier != null && supplier.email}" th:text="${'Email: ' + supplier.email}"></div>
+            </div>
+            <div>
+                <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">Delivery Warehouse</h4>
+                <div style="font-weight: 600;" th:text="${warehouse != null ? warehouse.name : 'Main Warehouse'}"></div>
+                <div th:if="${warehouse != null && warehouse.location}" th:text="${warehouse.location}"></div>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1.5rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-hover); text-align: left;">
+                    <th style="padding: 0.5rem;">Item Description</th>
+                    <th style="padding: 0.5rem; text-align: right;">Quantity</th>
+                    <th style="padding: 0.5rem; text-align: right;">Unit Cost</th>
+                    <th style="padding: 0.5rem; text-align: right;">Line Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="i : ${purchase.items}" style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.5rem;" th:text="${i.description != null ? i.description : 'Product #' + i.productId}"></td>
+                    <td style="padding: 0.5rem; text-align: right;" th:text="${i.quantity}"></td>
+                    <td style="padding: 0.5rem; text-align: right;" th:text="${(settings != null ? settings.currencySymbol : '₹') + #numbers.formatDecimal(i.unitCost, 1, 2)}"></td>
+                    <td style="padding: 0.5rem; text-align: right; font-weight: 600;" th:text="${(settings != null ? settings.currencySymbol : '₹') + #numbers.formatDecimal(i.lineTotal, 1, 2)}"></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" style="text-align: right; font-weight: 700; padding: 0.75rem 0.5rem;">Grand Total:</td>
+                    <td style="text-align: right; font-weight: 700; font-size: 1.1rem; color: var(--primary); padding: 0.75rem 0.5rem;"
+                        th:text="${(settings != null ? settings.currencySymbol : '₹') + #numbers.formatDecimal(purchase.total, 1, 2)}"></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div th:if="${purchase.notes}" style="background: var(--bg-hover); padding: 1rem; border-radius: 6px; font-size: 0.85rem;">
+            <strong>Notes:</strong> <span th:text="${purchase.notes}"></span>
+        </div>
+    </div>
+</div>
+</body>
+</html>

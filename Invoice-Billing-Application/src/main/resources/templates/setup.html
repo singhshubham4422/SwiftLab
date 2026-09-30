@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initial Setup - Business Invoicing</title>
+    <link rel="stylesheet" th:href="@{/css/theme.css}">
+    <script th:src="@{/js/theme-toggle.js}"></script>
+</head>
+<body>
+    <div style="max-width: 760px; margin: 3rem auto; padding: 0 1.5rem;">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+            <button type="button" id="theme-toggle-btn" class="btn btn-secondary btn-sm" title="Toggle Light / Dark Mode">
+                <span id="theme-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </span>
+                <span id="theme-text">Theme</span>
+            </button>
+        </div>
+
+        <div class="card" style="box-shadow: var(--shadow-lg); padding: 2.5rem;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 12px; background: var(--primary-light); color: var(--primary); margin-bottom: 1rem;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.025em; margin-bottom: 0.5rem;">Welcome to Your Invoice Application</h1>
+                <p style="color: var(--text-secondary); font-size: 0.95rem;">Please configure your business details to personalize your invoicing system and document headers.</p>
+            </div>
+
+            <form th:action="@{/setup/save}" th:object="${settingsForm}" method="post">
+                <!-- User & Organization Section -->
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        1. Identity &amp; Branding
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Your Name *</label>
+                            <input type="text" th:field="*{userName}" class="form-control" placeholder="e.g. John Doe / Shubham Singh" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Organisation / Business Name *</label>
+                            <input type="text" th:field="*{organizationName}" class="form-control" placeholder="e.g. SwiftLab Technologies" required oninput="updateAppTitlePreview(this.value)" />
+                            <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                                The app will be titled: <strong id="preview-app-title" style="color: var(--primary);">Your Organisation Invoicing</strong>
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Business Tagline / Subtitle</label>
+                        <input type="text" th:field="*{tagline}" class="form-control" placeholder="e.g. Modern Enterprise Invoice Management" />
+                    </div>
+                </div>
+
+                <!-- Currency & Billing Configuration -->
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        2. Currency &amp; Pricing Standard
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Select Currency *</label>
+                            <select th:field="*{currencySymbol}" class="form-control" onchange="syncCurrencyCode(this)">
+                                <option value="₹">₹ - Indian Rupee (INR)</option>
+                                <option value="$">$ - US Dollar (USD)</option>
+                                <option value="€">€ - Euro (EUR)</option>
+                                <option value="£">£ - British Pound (GBP)</option>
+                                <option value="C$">C$ - Canadian Dollar (CAD)</option>
+                                <option value="A$">A$ - Australian Dollar (AUD)</option>
+                                <option value="AED">AED - UAE Dirham</option>
+                                <option value="¥">¥ - Japanese Yen (JPY)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Currency Code</label>
+                            <input type="text" id="currencyCode" th:field="*{currencyCode}" class="form-control" readonly />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Default Tax / GST Rate (%)</label>
+                            <input type="number" th:field="*{defaultTaxRate}" class="form-control" min="0" max="100" step="0.1" value="18.0" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact & Communication Details -->
+                <div style="margin-bottom: 2.5rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        3. Invoice Header Contact Information
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Contact Email</label>
+                            <input type="email" th:field="*{email}" class="form-control" placeholder="contact@swiftlab.io" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Contact Phone</label>
+                            <input type="text" th:field="*{phone}" class="form-control" placeholder="+91 98765 43210 or +1 (555) 019-2834" />
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Registered Business Address</label>
+                        <textarea th:field="*{address}" class="form-control" rows="2" placeholder="Suite, Street Address, City, State, Country"></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1.05rem; justify-content: center;">
+                    Complete Setup &amp; Start Invoicing
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function updateAppTitlePreview(val) {
+            const el = document.getElementById('preview-app-title');
+            if (el) {
+                el.textContent = val.trim() ? (val.trim() + ' Invoicing') : 'Your Organisation Invoicing';
+            }
+        }
+        function syncCurrencyCode(select) {
+            const map = {
+                '₹': 'INR',
+                '$': 'USD',
+                '€': 'EUR',
+                '£': 'GBP',
+                'C$': 'CAD',
+                'A$': 'AUD',
+                'AED': 'AED',
+                '¥': 'JPY'
+            };
+            const codeInput = document.getElementById('currencyCode');
+            if (codeInput && map[select.value]) {
+                codeInput.value = map[select.value];
+            }
+        }
+    </script>
+</body>
+</html>

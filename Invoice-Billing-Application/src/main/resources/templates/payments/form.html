@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record Payment - SwiftLab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .sidebar { min-height: 100vh; background-color: #1e293b; }
+        .sidebar .nav-link { color: #94a3b8; padding: 0.75rem 1rem; border-radius: 0.375rem; margin-bottom: 0.25rem; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background-color: #334155; }
+        .main-content { background-color: #f8fafc; min-height: 100vh; }
+        .card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 0.5rem; }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 p-0 sidebar d-none d-md-block">
+            <div th:replace="~{layout :: sidebar}"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 p-4 main-content">
+            <div th:replace="~{layout :: topbar}"></div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h4 mb-0 fw-bold">Record Payment</h2>
+                    <small class="text-muted">Apply payment to an outstanding invoice</small>
+                </div>
+                <a href="/payments" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Payments
+                </a>
+            </div>
+
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+                    <div class="card p-4">
+                        <form action="/payments/save" method="post">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Select Invoice</label>
+                                <select name="invoiceId" id="invoiceSelect" class="form-select" onchange="onInvoiceSelected(this)" required>
+                                    <option value="" data-due="0">-- Select an Invoice --</option>
+                                    <option th:each="inv : ${invoices}"
+                                            th:value="${inv.id}"
+                                            th:data-due="${inv.totalAmount - inv.paidAmount}"
+                                            th:selected="${inv.id == preselectedInvoiceId}"
+                                            th:text="'Invoice #' + ${inv.invoiceNumber} + ' - ' + ${inv.customerName} + ' (Due: $' + ${#numbers.formatDecimal(inv.totalAmount - inv.paidAmount, 1, 2)} + ')'">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Payment Amount ($)</label>
+                                    <input type="number" step="0.01" min="0.01" name="amount" id="amountInput" class="form-control" placeholder="0.00" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Payment Method</label>
+                                    <select name="method" class="form-select" required>
+                                        <option th:each="m : ${paymentMethods}" th:value="${m}" th:text="${m}"></option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Reference / Transaction ID</label>
+                                <input type="text" name="referenceNumber" class="form-control" placeholder="e.g. TXN-9988123 or Cheque #">
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Notes</label>
+                                <textarea name="notes" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="/payments" class="btn btn-outline-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-primary fw-bold px-4">
+                                    <i class="bi bi-check2-circle me-1"></i> Submit Payment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function onInvoiceSelected(sel) {
+        const selected = sel.options[sel.selectedIndex];
+        const due = selected.getAttribute('data-due') || 0;
+        if (due > 0) {
+            document.getElementById('amountInput').value = parseFloat(due).toFixed(2);
+        }
+    }
+    // initialize on load if preselected
+    window.addEventListener('DOMContentLoaded', () => {
+        const sel = document.getElementById('invoiceSelect');
+        if (sel.selectedIndex > 0) {
+            onInvoiceSelected(sel);
+        }
+    });
+</script>
+</body>
+</html>

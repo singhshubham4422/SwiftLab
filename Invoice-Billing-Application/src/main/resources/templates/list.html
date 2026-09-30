@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout (~{::title}, ~{::#main-content})}">
+<head>
+    <title th:text="'Dashboard - ' + ${settings.appTitle}">Invoices Dashboard</title>
+</head>
+<body>
+<div id="main-content">
+    <!-- Top Stats Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-label">Total Invoiced</span>
+            <span class="stat-value" th:text="${settings.currencySymbol} + ${#numbers.formatDecimal(totalRevenue, 1, 'COMMA', 2, 'POINT')}">₹0.00</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Collected (Paid)</span>
+            <span class="stat-value" style="color: var(--success);" th:text="${settings.currencySymbol} + ${#numbers.formatDecimal(paidRevenue, 1, 'COMMA', 2, 'POINT')}">₹0.00</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Outstanding Balance</span>
+            <span class="stat-value" style="color: var(--warning);" th:text="${settings.currencySymbol} + ${#numbers.formatDecimal(pendingRevenue, 1, 'COMMA', 2, 'POINT')}">₹0.00</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Total Invoices</span>
+            <span class="stat-value" th:text="${totalCount}">0</span>
+        </div>
+    </div>
+
+    <!-- Filter and Action Bar -->
+    <div class="card">
+        <form th:action="@{/invoices}" method="get" class="filter-bar">
+            <div class="search-box">
+                <input type="text" name="search" th:value="${search}" class="form-control" placeholder="Search by customer name or invoice #..." />
+                <button type="submit" class="btn btn-secondary">Search</button>
+                <a th:if="${search != null or (statusFilter != null and statusFilter != 'ALL')}" th:href="@{/invoices}" class="btn btn-secondary btn-sm" title="Clear Filters">Reset</a>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <label class="form-label" style="margin: 0;">Status:</label>
+                <select name="status" class="form-control" style="width: 140px;" onchange="this.form.submit()">
+                    <option value="ALL" th:selected="${statusFilter == null or statusFilter == 'ALL'}">All Statuses</option>
+                    <option value="PENDING" th:selected="${statusFilter == 'PENDING'}">Pending</option>
+                    <option value="PAID" th:selected="${statusFilter == 'PAID'}">Paid</option>
+                    <option value="OVERDUE" th:selected="${statusFilter == 'OVERDUE'}">Overdue</option>
+                </select>
+                <a th:href="@{/invoices/new}" class="btn btn-primary">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    New Invoice
+                </a>
+            </div>
+        </form>
+
+        <!-- Invoice Table -->
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Date</th>
+                    <th>Due Date</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th style="text-align: right;" th:text="'Total Amount (' + ${settings.currencySymbol} + ')'">Total Amount</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(invoices)}">
+                    <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                        No invoices found. Click <strong>"New Invoice"</strong> or <strong>"Import Excel"</strong> to get started.
+                    </td>
+                </tr>
+                <tr th:each="inv : ${invoices}">
+                    <td>
+                        <a th:href="@{/invoices/{id}(id=${inv.id})}" style="font-weight: 700;" th:text="${inv.invoiceNumber}">INV-001</a>
+                    </td>
+                    <td th:text="${inv.issueDate}">2026-09-30</td>
+                    <td th:text="${inv.dueDate}">2026-10-15</td>
+                    <td>
+                        <div style="font-weight: 600;" th:text="${inv.customerName != null ? inv.customerName : 'N/A'}">Acme Corp</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);" th:text="${inv.customerEmail}">billing@acme.com</div>
+                    </td>
+                    <td>
+                        <div>
+                            <span th:if="${inv.status == 'PAID'}" class="badge badge-paid">Paid</span>
+                            <span th:if="${inv.status == 'PENDING'}" class="badge badge-pending">Pending</span>
+                            <span th:if="${inv.status == 'OVERDUE'}" class="badge badge-overdue">Overdue</span>
+                        </div>
+                        <div style="margin-top: 0.25rem;">
+                            <span th:if="${inv.synced}" style="font-size: 0.7rem; color: var(--success); font-weight: 600;" title="Synchronized with Supabase Cloud">● Cloud Synced</span>
+                            <span th:unless="${inv.synced}" style="font-size: 0.7rem; color: var(--text-muted);" title="Stored securely in local offline database">○ Local Offline</span>
+                        </div>
+                    </td>
+                    <td style="text-align: right; font-weight: 700; font-family: var(--font-mono);" th:text="${settings.currencySymbol} + ${#numbers.formatDecimal(inv.total, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                            <a th:href="@{/invoices/{id}(id=${inv.id})}" class="btn btn-secondary btn-sm" title="View details">View</a>
+                            <a th:href="@{/invoices/{id}/pdf(id=${inv.id})}" class="btn btn-secondary btn-sm" title="Download PDF">PDF</a>
+                            <a th:href="@{/invoices/{id}/excel(id=${inv.id})}" class="btn btn-secondary btn-sm" title="Download Excel">Excel</a>
+                            <a th:href="@{/invoices/edit/{id}(id=${inv.id})}" class="btn btn-secondary btn-sm" title="Edit">Edit</a>
+                            <form th:action="@{/invoices/{id}/delete(id=${inv.id})}" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete invoice #' + this.dataset.num + '?');" th:data-num="${inv.invoiceNumber}">
+                                <button type="submit" class="btn btn-danger btn-sm" title="Delete">✕</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
